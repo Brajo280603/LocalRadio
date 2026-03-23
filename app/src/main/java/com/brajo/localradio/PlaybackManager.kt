@@ -8,14 +8,19 @@ import android.provider.MediaStore
 
 object PlaybackManager {
     var mediaPlayer : MediaPlayer? = null
-    var isAutoplay : Boolean = false
-    var isRadioMode : Boolean = false
+
     var currentSongList: List<Song> = emptyList()
 
-    private var playedHistory = mutableSetOf<Long>()
+    var masterSongList: List<Song> = emptyList()
+
+    private var playedHistory = mutableListOf<Long>()
 
     var currentSong: Song? = null
     var uiUpdateCallback: ((Song,Boolean) -> Unit)? = null
+
+    var currentMode: PlaybackMode = PlaybackMode.SEQUENTIAL
+
+    var isClassicRadioModeActive: Boolean = false
     fun playTrack(
         context:Context,
         song: Song,
@@ -62,15 +67,10 @@ object PlaybackManager {
     fun playNext(context: Context){
         if(currentSong == null) return
 
-        val nextSong = when {
-            isRadioMode && currentSongList.isNotEmpty() -> findNextRadioSong(currentSong!!,currentSongList)
-            isAutoplay -> {
-                val currentIndex = currentSongList.indexOf(currentSong)
-                if(currentIndex != -1 && currentIndex < currentSongList.size - 1){
-                    currentSongList[currentIndex + 1]
-                } else null
-            }
-            else -> null
+        val nextSong = when (currentMode) {
+            PlaybackMode.SEQUENTIAL -> getNextSequentialSong()
+            PlaybackMode.RANDOM -> getNextRandomSong()
+            PlaybackMode.RADIO -> getNextRadioSong()
         }
 
         if(nextSong != null){
@@ -84,9 +84,37 @@ object PlaybackManager {
     }
 
     fun playPrevious(context:Context){
-        mediaPlayer?.seekTo(0)
-        mediaPlayer?.start()
-        uiUpdateCallback?.invoke(currentSong!!,true)
+        if(currentSong == null) return
+
+        val currentPosition = mediaPlayer?.currentPosition ?: 0
+
+        if(currentPosition > 10000) {
+            mediaPlayer?.seekTo(0)
+            mediaPlayer?.start()
+            uiUpdateCallback?.invoke(currentSong!!,true)
+        }else{
+            if(playedHistory.size > 1){
+                playedHistory.removeAt(playedHistory.lastIndex)
+                val previousSongId = playedHistory.removeAt(playedHistory.lastIndex)
+
+                val previousSong = masterSongList.find{it.id == previousSongId}
+
+                if(previousSong != null){
+                    uiUpdateCallback?.let{callback ->
+                        playTrack(context,previousSong,false,callback)
+                    }
+                }else{
+                    mediaPlayer?.seekTo(0)
+                    mediaPlayer?.start()
+                    uiUpdateCallback?.invoke(currentSong!!,true)
+                }
+            }else{
+                mediaPlayer?.seekTo(0)
+                mediaPlayer?.start()
+                uiUpdateCallback?.invoke(currentSong!!,true)
+            }
+        }
+
         notificationSync(currentSong,context)
     }
 
@@ -142,9 +170,35 @@ object PlaybackManager {
                 putExtra("SONG_ARTIST", song.artist)
                 putExtra("SONG_DURATION", song.duration)
                 putExtra("SONG_PATH",song.path)
+                putExtra("IS_CLASSIC_MODE",isClassicRadioModeActive)
             }
             context.startForegroundService(serviceIntent)
         }
     }
+
+    private fun getNextSequentialSong():Song?{
+        val currentIndex = currentSongList.indexOf(currentSong)
+        return if(currentIndex != -1 && currentIndex < currentSongList.size - 1){
+            currentSongList[currentIndex + 1]
+        } else null
+    }
+    private fun getNextRandomSong():Song?{
+        return masterSongList.filter { it.id != currentSong?.id }.randomOrNull()
+    }
+    private fun getNextRadioSong():Song?{
+        return findNextRadioSong(currentSong!!,masterSongList)
+    }
 }
 
+
+enum class PlaybackMode{
+    SEQUENTIAL,
+    RANDOM,
+    RADIO
+}
+
+//settings data class
+data class AppSettings(
+    val playbackMode: PlaybackMode = PlaybackMode.SEQUENTIAL,
+    val isClassicRadioMode: Boolean = false
+)

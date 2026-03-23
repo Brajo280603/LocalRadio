@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.brajo.localradio.AppSettings
 import com.brajo.localradio.PlaybackManager
 import com.brajo.localradio.Song
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +53,7 @@ import kotlinx.coroutines.withContext
 fun PlayerTab(
     song: Song?,
     isAudioPlaying: Boolean,
+    settings: AppSettings,
     context : Context
     ) {
     if(song == null){
@@ -131,6 +133,7 @@ fun PlayerTab(
         Slider(
             value = currentPosition.toFloat(),
             valueRange = 0f..(song.duration.toFloat().coerceAtLeast(1f)),
+            enabled = !settings.isClassicRadioMode,
             onValueChange = {
                     draggedValue ->
                 currentPosition = draggedValue.toInt()
@@ -167,23 +170,25 @@ fun PlayerTab(
             Button(
                 onClick = {
                     PlaybackManager.playPrevious(context)
-                }
+                },
+                enabled = !settings.isClassicRadioMode
             )
             {
                 Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = "Previous")
             }
             Button(
-            onClick = {
-                PlaybackManager.togglePlayPause(context)
-            }
-        )
+                onClick = {
+                    PlaybackManager.togglePlayPause(context)
+                }
+            )
             {
                 Icon(imageVector = if(isAudioPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, contentDescription = if(isAudioPlaying) "Pause" else "Play")
             }
             Button(
                 onClick = {
                     PlaybackManager.playNext(context)
-                }
+                },
+                enabled = !settings.isClassicRadioMode
             )
             {
                 Icon(imageVector = Icons.Default.SkipNext, contentDescription = "Next")

@@ -20,6 +20,7 @@ class MusicService : Service() {
     private var currentArtist: String = "Unknown Artist"
     private var currentDuration: Long = 0L
     private var currentPath: String = ""
+    private var isClassicRadioMode : Boolean = false
 
     override fun onCreate() {
         super.onCreate()
@@ -78,6 +79,7 @@ class MusicService : Service() {
         intent?.getStringExtra("SONG_ARTIST")?.let { currentArtist = it }
         intent?.getLongExtra("SONG_DURATION",0L)?.let { if(it > 0L) currentDuration = it }
         intent?.getStringExtra("SONG_PATH")?.let {currentPath = it}
+        intent?.getBooleanExtra("IS_CLASSIC_MODE",false)?.let{isClassicRadioMode = it}
 
         val albumArtBitmap = getAlbumArt(currentPath)
 
@@ -111,27 +113,30 @@ class MusicService : Service() {
         val state = if(isPlaying) android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING
                     else android.support.v4.media.session.PlaybackStateCompat.STATE_PAUSED
 
-        mediaSession.setPlaybackState(
-            android.support.v4.media.session.PlaybackStateCompat.Builder()
-                .setState(state, PlaybackManager.mediaPlayer?.currentPosition?.toLong() ?:0L, 1.0f)
-                .setActions(
-                    android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                    android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                    android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                    android.support.v4.media.session.PlaybackStateCompat.ACTION_SEEK_TO
-                )
-                .build()
-        )
+        val playbackBuilder = android.support.v4.media.session.PlaybackStateCompat.Builder()
+            .setState(state, PlaybackManager.mediaPlayer?.currentPosition?.toLong() ?:0L, 1.0f)
+        if(!isClassicRadioMode){
+            playbackBuilder.setActions(
+                android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE or
+                android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                android.support.v4.media.session.PlaybackStateCompat.ACTION_SEEK_TO
+            )
+        }else{
+            playbackBuilder.setActions(
+                android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE
+            )
+        }
 
-        val notification = NotificationCompat.Builder(this,channelId)
+        mediaSession.setPlaybackState(playbackBuilder.build())
+
+        val notificationBuilder = NotificationCompat.Builder(this,channelId)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(currentTitle)
             .setContentText(currentArtist)
 
-            .addAction(android.R.drawable.ic_media_previous,"previous",prevIntent)
             .addAction(playPauseIcon,playPauseText,pauseIntent)
-            .addAction(android.R.drawable.ic_media_next,"next",nextIntent)
 
             .setLargeIcon(albumArtBitmap)
             .setStyle(
@@ -141,7 +146,15 @@ class MusicService : Service() {
             )
             .setDeleteIntent(stopIntent)
             .setOngoing(isPlaying)
-            .build()
+
+        if(!isClassicRadioMode){
+            notificationBuilder.addAction(android.R.drawable.ic_media_previous,"previous",prevIntent)
+                .addAction(android.R.drawable.ic_media_next,"next",nextIntent)
+        }
+
+
+
+        val notification = notificationBuilder.build()
 
         startForeground(1,notification)
 

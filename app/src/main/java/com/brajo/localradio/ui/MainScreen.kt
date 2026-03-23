@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.room.Room
 import com.brajo.localradio.AppDatabase
+import com.brajo.localradio.AppSettings
 import com.brajo.localradio.PlaybackManager
 import com.brajo.localradio.Song
 import com.brajo.localradio.ui.tabs.LibraryTab
@@ -59,17 +60,34 @@ fun MainScreen(){
     val songDao = db.songDao()
     val songList by songDao.getAllSongs().collectAsState(initial = emptyList())
 
-    var currentPlaying by remember { mutableStateOf<Song?>(PlaybackManager.currentSong) }
+    var currentPlaying by remember { mutableStateOf(PlaybackManager.currentSong) }
     var isAudioPlaying by remember { mutableStateOf(PlaybackManager.mediaPlayer?.isPlaying == true) }
-    var isAutoplay by remember { mutableStateOf(PlaybackManager.isAutoplay) }
-    var isRadioMode by remember { mutableStateOf(PlaybackManager.isRadioMode) }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredSongList = remember(searchQuery,songList) {
+        if(searchQuery.isBlank()){
+            songList
+        }else{
+            songList.filter {
+                it.title.contains(searchQuery, ignoreCase = true) || it.artist.contains(searchQuery,ignoreCase = true)
+            }
+        }
+    }
+
+    var appSettings by remember { mutableStateOf<AppSettings>(AppSettings()) }
+
 
     LaunchedEffect(Unit) {
         PlaybackManager.uiUpdateCallback = {song, isPlaying->
             currentPlaying = song
             isAudioPlaying = isPlaying
         }
+    }
+
+    LaunchedEffect(songList) {
+        if(songList.isNotEmpty()) PlaybackManager.masterSongList = songList
     }
 
     val audioPermission:String
@@ -117,10 +135,13 @@ fun MainScreen(){
             Box(modifier = Modifier.padding(paddingValues)) {
                 when (selectedTabIndex) {
                     0 -> LibraryTab(
-                        songList = songList,
+                        searchQuery = searchQuery,
+                        songList = filteredSongList,
                         currentPlaying = currentPlaying,
+                        onSearchQueryChange = {searchQuery = it},
+                        isAudioPlaying = isAudioPlaying,
                         onSongClick = {song ->
-                            PlaybackManager.currentSongList = songList
+                            PlaybackManager.currentSongList = filteredSongList
                             PlaybackManager.playTrack(
                                 context = context,song = song, isManualClick = true,
                                 onUpdateUI = { updatedSong ,isPlaying->
@@ -134,22 +155,15 @@ fun MainScreen(){
                     1 -> PlayerTab(
                         song = currentPlaying,
                         isAudioPlaying = isAudioPlaying,
+                        settings = appSettings,
                         context = context
                     )
 
                     2 -> SettingsTab(
-                        isAutoplay = isAutoplay, isRadioMode = isRadioMode,
-                        onAutoplayToggle = {
-                            isAutoplay = !isAutoplay
-                            if(isAutoplay) isRadioMode = false
-                            PlaybackManager.isAutoplay = isAutoplay
-                            PlaybackManager.isRadioMode = isRadioMode
-                        },
-                        onRadioToggle = {
-                            isRadioMode = !isRadioMode
-                            if(isRadioMode) isAutoplay = false
-                            PlaybackManager.isAutoplay = isAutoplay
-                            PlaybackManager.isRadioMode = isRadioMode
+                        context = context,
+                        settings = appSettings,
+                        onSettingsChange = { newSettings->
+                            appSettings = newSettings
                         }
                     )
                 }
