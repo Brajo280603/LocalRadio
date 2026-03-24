@@ -25,9 +25,17 @@
 - [x] CLASSIC RADIO MODE (no modern features, even next or previous , just let it play with Ai Recommendations, this would be available only as a option) (also cant view the queue in this mode)
 
 ## Phase 3: The Deep End (True Audio AI)
-- [ ] Implement a DSP (Digital Signal Processing) library like TarsosDSP.
-- [ ] Replace the random number generator with real Fourier Transforms to calculate actual BPM and bass frequencies.
-- [ ] use YAMNet for Vector Generation
+- [x] 1. TensorFlow Lite Integration: Import the YAMNet.tflite model into your Android project.
+- [x] 2. The Audio Extractor: Write a function that grabs the first 30 seconds of an audio file and converts it into a raw PCM Float Array (the format YAMNet requires).
+- [x] 3. Background Worker (CRITICAL): Implement Android WorkManager. Analyzing 1,412 songs takes massive CPU power. You need a background job that slowly processes un-analyzed songs overnight while the user's phone is charging, saving the resulting vectors to your Room Database.
+- [x] 4. Vector Math Upgrade: Upgrade your calculateDistance function from Euclidean Distance to Cosine Similarity, which is the industry standard for comparing massive AI vectors.
+
+## Phase 4: The Subtle Upgrades
+- [ ] export Database option
+- [ ] reset Database option
+- [ ] import Database option
+- [x] show somewhere just how many songs are scanned (vector generated) 
+- [ ] 
 ## Fixes :
 - [x] PlayPrevious Button now only restarts current song from beginning, need to implement restart if played more than 10 seconds , if less than 10 seconds play previous song , use `playedHistory` to find played songs.
 - [x] due to search only returns the filtered array , if we wanna do radio , it will only do similarity check between the searched items

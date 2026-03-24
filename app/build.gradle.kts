@@ -36,6 +36,9 @@ android {
     buildFeatures {
         compose = true
     }
+    androidResources{
+        noCompress.add("tflite")
+    }
 }
 
 dependencies {
@@ -52,6 +55,10 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.37.3")
     implementation(libs.androidx.media)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.tensorflow.lite)
+    implementation(libs.tensorflow.lite.support)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -67,4 +74,9 @@ dependencies {
     ksp("androidx.room:room-compiler:$room_version")
 
 
+}
+
+configurations.all {
+    exclude(group = "com.google.ai.edge.litert", module = "litert-support-api")
+    exclude(group = "org.tensorflow", module = "tensorflow-lite-support-api")
 }

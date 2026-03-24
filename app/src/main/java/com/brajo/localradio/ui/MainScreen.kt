@@ -43,21 +43,19 @@ import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.collections.emptyList
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.brajo.localradio.ai.YamnetWorker
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MainScreen(){
     val context = LocalContext.current
 
-    val db = remember {
-        Room.databaseBuilder(
-            context.applicationContext,
-            AppDatabase::class.java, "local-radio-db"
-        )
-            .fallbackToDestructiveMigration()
-            .build()
-    }
-    val songDao = db.songDao()
+
+    val songDao = remember { AppDatabase.getDatabase(context).songDao() }
     val songList by songDao.getAllSongs().collectAsState(initial = emptyList())
 
     var currentPlaying by remember { mutableStateOf(PlaybackManager.currentSong) }
@@ -112,6 +110,20 @@ fun MainScreen(){
         LaunchedEffect(Unit) {
             val fetchedSongs = withContext(Dispatchers.IO) { fetchMusic(context) }
             songDao.insertAll(fetchedSongs)
+
+            val constraints = Constraints.Builder()
+                .setRequiresBatteryNotLow(true)
+                .build()
+
+            val yamnetWorkRequest = OneTimeWorkRequestBuilder<com.brajo.localradio.ai.YamnetWorker>()
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                "YAMNetAnalysisWork",
+                ExistingWorkPolicy.KEEP,
+                yamnetWorkRequest
+            )
         }
 
         val tabTitles = listOf("Library", "Now Playing", "Settings")
@@ -235,9 +247,8 @@ fun fetchMusic(context: android.content.Context): List<Song> {
             val path = cursor.getString(pathCol)
             val duration = cursor.getLong(durationCol)
 
-            val fakeVector = List(5){Math.random().toFloat()}.joinToString(",")
 
-            songs.add(Song(id,title,artist,path,duration,fakeVector))
+            songs.add(Song(id,title,artist,path,duration, isAnalyzed = false, acousticVector = null))
         }
     }
 

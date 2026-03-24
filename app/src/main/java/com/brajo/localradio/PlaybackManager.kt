@@ -21,6 +21,17 @@ object PlaybackManager {
     var currentMode: PlaybackMode = PlaybackMode.SEQUENTIAL
 
     var isClassicRadioModeActive: Boolean = false
+
+    private val vectorCache = mutableMapOf<Long, FloatArray>()
+
+    private fun getParsedVector(song: Song): FloatArray?{
+        if(song.acousticVector == null || song.acousticVector.startsWith("ERROR")) return null
+
+        return vectorCache.getOrPut(song.id){
+            song.acousticVector.split(",").mapNotNull { it.toFloatOrNull() }.toFloatArray()
+        }
+    }
+
     fun playTrack(
         context:Context,
         song: Song,
@@ -146,6 +157,24 @@ object PlaybackManager {
         return kotlin.math.sqrt(sumOfSquares)
     }
 
+    private fun calculateCosineSimilarity(v1: FloatArray,v2: FloatArray): Float{
+        if(v1.size != v2.size || v1.isEmpty()) return 0f
+
+        var dotProduct = 0.0f
+        var normA = 0.0f
+        var normB = 0.0f
+
+        for(i in v1.indices){
+            dotProduct += v1[i] * v2[i]
+            normA += v1[i] * v1[i]
+            normB += v2[i] * v2[i]
+        }
+
+        val denominator = kotlin.math.sqrt(normA) * kotlin.math.sqrt(normB)
+
+        return if(denominator > 0) (dotProduct/denominator) else 0f
+    }
+
     private fun findNextRadioSong(currentSong:Song, songList:List<Song>): Song?{
         var availableSongs = songList.filter { it.id !in playedHistory }
 
@@ -157,8 +186,16 @@ object PlaybackManager {
         }
 
 
-        return availableSongs.minByOrNull { targetSong ->
-            calculateDistance(currentSong.acousticVector, targetSong.acousticVector)
+//        return availableSongs.minByOrNull { targetSong ->
+//            calculateDistance(currentSong.acousticVector, targetSong.acousticVector)
+//        }
+
+        val currentVector = getParsedVector(currentSong)?: return null
+        return availableSongs.maxByOrNull { targetSong ->
+
+            val targetVector = getParsedVector(targetSong)?: return@maxByOrNull -1f
+
+            calculateCosineSimilarity(currentVector,targetVector)
         }
 
     }

@@ -11,5 +11,6 @@ data class Song(
     val path : String,
     val duration : Long,
 
-    val acousticVector: String? = null
+    val acousticVector: String? = null,
+    val isAnalyzed : Boolean = false
 )
