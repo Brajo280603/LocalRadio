@@ -31,11 +31,12 @@
 - [x] 4. Vector Math Upgrade: Upgrade your calculateDistance function from Euclidean Distance to Cosine Similarity, which is the industry standard for comparing massive AI vectors.
 
 ## Phase 4: The Subtle Upgrades
-- [ ] export Database option
-- [ ] reset Database option
-- [ ] import Database option
+- [x] export Database option
+- [x] reset Database option(no need just clear data of app)
+- [x] import Database option
 - [x] show somewhere just how many songs are scanned (vector generated) 
-- [ ] 
+- [x] add a icon
+- [x] onClick Notification open app
 ## Fixes :
 - [x] PlayPrevious Button now only restarts current song from beginning, need to implement restart if played more than 10 seconds , if less than 10 seconds play previous song , use `playedHistory` to find played songs.
 - [x] due to search only returns the filtered array , if we wanna do radio , it will only do similarity check between the searched items

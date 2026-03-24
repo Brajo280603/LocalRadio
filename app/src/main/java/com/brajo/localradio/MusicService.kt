@@ -130,12 +130,18 @@ class MusicService : Service() {
 
         mediaSession.setPlaybackState(playbackBuilder.build())
 
+        val openAppIntent = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val pendingIntent = PendingIntent.getActivity(
+            this,0,openAppIntent,PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+
         val notificationBuilder = NotificationCompat.Builder(this,channelId)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(currentTitle)
             .setContentText(currentArtist)
-
+            .setContentIntent(pendingIntent)
             .addAction(playPauseIcon,playPauseText,pauseIntent)
 
             .setLargeIcon(albumArtBitmap)
@@ -169,6 +175,18 @@ class MusicService : Service() {
         mediaSession.release()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+
+        if(PlaybackManager.mediaPlayer?.isPlaying != true){
+            PlaybackManager.mediaPlayer?.release()
+            PlaybackManager.mediaPlayer = null
+
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
+    }
+
 }
 
 fun getAlbumArt(path: String): Bitmap?{
@@ -184,6 +202,7 @@ fun getAlbumArt(path: String): Bitmap?{
             null
         }
     } catch (e: Exception){
+        e.printStackTrace()
         null
     }
 }
