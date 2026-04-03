@@ -38,6 +38,10 @@
 - [x] add a icon
 - [x] onClick Notification open app
 - [ ] Sleep Timer (accept time)
+- [ ] background of now_playing should change colour based on colour of album 
+- [ ] change color of buttons based on color of album
+- [ ] lyrics viewer (synced sentence wise, .lrc type)
+- [ ] lyrics viewer (word synced similar to apple music)
 ## Fixes :
 - [x] PlayPrevious Button now only restarts current song from beginning, need to implement restart if played more than 10 seconds , if less than 10 seconds play previous song , use `playedHistory` to find played songs.
 - [x] due to search only returns the filtered array , if we wanna do radio , it will only do similarity check between the searched items
