@@ -1,6 +1,6 @@
 # Local Radio - Project Roadmap
 
-## Phase 1: The VIP Background Service & Audio Engine (Current)
+## Phase 1: The VIP Background Service & Audio Engine 
 - [x] Create a global `PlaybackManager` (Singleton).
 - [x] Create a Foreground Service (`MusicService`).
 - [x] Show a `MediaStyle` Lock Screen Notification.
