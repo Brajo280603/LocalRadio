@@ -55,6 +55,8 @@ class MusicService : Service() {
 
         }
         )
+
+        PlaybackManager.initializeAudioFocus(applicationContext)
     }
 
     override fun onBind(intent: Intent?): IBinder?{

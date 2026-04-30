@@ -7,6 +7,8 @@ import android.media.MediaPlayer
 import android.provider.MediaStore
 
 object PlaybackManager {
+
+
     var mediaPlayer : MediaPlayer? = null
 
     var currentSongList: List<Song> = emptyList()
@@ -32,6 +34,32 @@ object PlaybackManager {
         }
     }
 
+    private var audioFocusManager: AudioFocusManager? = null
+
+    fun initializeAudioFocus(context: Context){
+        if(audioFocusManager == null){
+            audioFocusManager = AudioFocusManager(
+                context = context,
+                isPlaying = {mediaPlayer?.isPlaying == true},
+                onPauseRequired = {
+                    if(mediaPlayer?.isPlaying == true){
+                        mediaPlayer?.pause()
+                        currentSong?.let {uiUpdateCallback?.invoke(it,false)}
+                        notificationSync(currentSong, context)
+                    }
+                },
+                onResumeRequired = {
+                    mediaPlayer?.start()
+                    currentSong?.let {uiUpdateCallback?.invoke(it,true)}
+                    notificationSync(currentSong,context)
+                },
+                onDuckRequired = {mediaPlayer?.setVolume(0.2f,0.2f)},
+                onRestoreVolumeRequired = {mediaPlayer?.setVolume(1.0f, 1.0f)}
+            )
+        }
+    }
+
+
     fun playTrack(
         context:Context,
         song: Song,
@@ -50,15 +78,24 @@ object PlaybackManager {
 
 
         mediaPlayer?.release()
-        val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
-        mediaPlayer = MediaPlayer.create(context, trackUri)
-        mediaPlayer?.start()
 
-        onUpdateUI(song, true)
+        val gotFucus = audioFocusManager?.requestAudioFocus() ?: true
 
-        mediaPlayer?.setOnCompletionListener {
-            playNext(context)
+        if(gotFucus){
+            val trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
+            mediaPlayer = MediaPlayer.create(context, trackUri)
+            mediaPlayer?.start()
+
+            onUpdateUI(song, true)
+
+            mediaPlayer?.setOnCompletionListener {
+                playNext(context)
+            }
+        }else{
+            onUpdateUI(song,false)
         }
+
+
     }
 
     fun togglePlayPause(context: Context){

@@ -113,7 +113,8 @@ fun PlayerTab(
         Spacer(modifier = Modifier.height(32.dp))
 
         Column(
-            modifier = Modifier.padding( horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding( horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth()
         )
         {
             Text(

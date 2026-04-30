@@ -47,4 +47,4 @@
 - [x] PlayPrevious Button now only restarts current song from beginning, need to implement restart if played more than 10 seconds , if less than 10 seconds play previous song , use `playedHistory` to find played songs.
 - [x] due to search only returns the filtered array , if we wanna do radio , it will only do similarity check between the searched items
 - [ ] Stop Music during a Call
-- [ ] Right Align Song name and Artist name on player screen
+- [x] Right Align Song name and Artist name on player screen
