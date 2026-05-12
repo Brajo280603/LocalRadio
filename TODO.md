@@ -48,3 +48,4 @@
 - [x] due to search only returns the filtered array , if we wanna do radio , it will only do similarity check between the searched items
 - [x] Stop Music during a Call
 - [x] Right Align Song name and Artist name on player screen
+- [ ] Fix: remove songs from library which are deleted later.
